@@ -1,2 +1,7 @@
-.pt
-.pth
+model_LR_0.001_BS_32.pt
+model_LR_0.001_BS_64.pt
+model_LR_0.0001_BS_32.pt
+model_LR_0.0001_BS_64.pt
+model_LR_0.0003_BS_32.pt
+model_LR_0.0003_BS_64.pt
+music_genre_model_1.pt
