@@ -1,0 +1,97 @@
+:root {
+  --bg: #a7ad8a;
+  --panel: #9aa17c;
+  --border: #3b3f2b;
+  --text: #1f2316;
+  --accent: #2b2f1d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: 'VT323', monospace;
+  color: var(--text);
+}
+
+.window {
+  width: 520px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 4px solid var(--border);
+  background: var(--panel);
+}
+
+.title {
+  text-align: center;
+  font-size: 28px;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+  border-bottom: 3px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.block {
+  border: 3px solid var(--border);
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--bg);
+}
+
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+.input-row input[type="file"] {
+  width: 100%;
+  border: 3px solid var(--border);
+  background: var(--panel);
+  font-family: inherit;
+  font-size: 16px;
+  padding: 6px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 20px;
+  border: 3px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filename,
+.status {
+  margin-top: 8px;
+  font-size: 16px;
+}
+
+.hidden {
+  display: none;
+}
+
+.result-line {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.bars {
+  margin-top: 10px;
+}
+
+.bar {
+  height: 14px;
+  background: var(--accent);
+  margin-bottom: 6px;
+}

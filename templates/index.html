@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Retro Genre Classifier</title>
+
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="window">
+
+    <header class="title">
+      MUSIC GENRE CLASSIFIER
+    </header>
+
+    <section class="block">
+      <label class="label">Audio File (MP3)</label>
+      <div class="input-row">
+        <input type="file" id="audioInput" accept=".mp3">
+      </div>
+      <div class="filename" id="fileName">NO FILE SELECTED</div>
+    </section>
+
+    <section class="block">
+      <button id="analyzeBtn" disabled>ANALYZE</button>
+      <div class="status" id="status">IDLE</div>
+    </section>
+
+    <section class="block hidden" id="resultBlock">
+      <div class="result-line">
+        GENRE: <span id="genreText">---</span>
+      </div>
+      <div class="result-line">
+        CONFIDENCE: <span id="confidenceText">---</span>
+      </div>
+
+      <div class="bars" id="bars"></div>
+    </section>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
