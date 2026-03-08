@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HarmoniAI — Upload</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080f; --surface: #0f0f1a;
+    --border: rgba(255,255,255,0.07); --border-active: rgba(200,245,100,0.4);
+    --accent: #c8f564; --accent2: #7c6ff7;
+    --text: #e8e8f0; --muted: #6b6b80;
+    --error: #ff5f5f;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Syne', sans-serif; min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0; opacity:0.6;
+  }
+
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 48px;
+    backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+    background:rgba(8,8,15,0.7);
+  }
+  .logo { font-size:1.1rem; font-weight:800; letter-spacing:-0.02em; display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); }
+  .logo-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent); animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+  .back-btn {
+    display:flex; align-items:center; gap:8px; color:var(--muted);
+    text-decoration:none; font-size:0.85rem; font-family:'DM Mono',monospace;
+    transition:color 0.2s;
+  }
+  .back-btn:hover { color:var(--text); }
+
+
+  main {
+    position:relative; z-index:1;
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:100px 24px 60px;
+    gap:32px;
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight:800; letter-spacing:-0.04em;
+    text-align:center;
+  }
+  .page-title span { color:var(--accent); }
+
+  /* Upload card */
+  .upload-card {
+    width:100%; max-width:640px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    padding:8px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .drop-zone {
+    border:2px dashed var(--border);
+    padding:64px 40px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color 0.25s, background 0.25s;
+    position:relative;
+  }
+  .drop-zone.drag-over {
+    border-color: var(--border-active);
+    background: rgba(200,245,100,0.04);
+  }
+  .drop-zone.has-file {
+    border-color: var(--accent2);
+    border-style: solid;
+  }
+
+  #fileInput { display:none; }
+
+  .upload-icon {
+    width:64px; height:64px; margin:0 auto 24px;
+    background:rgba(124,111,247,0.1);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.8rem;
+    transition: transform 0.3s;
+  }
+  .drop-zone:hover .upload-icon, .drop-zone.drag-over .upload-icon { transform: scale(1.1); }
+
+  .drop-title { font-size:1.15rem; font-weight:700; margin-bottom:10px; }
+  .drop-sub { font-size:0.82rem; color:var(--muted); font-family:'DM Mono',monospace; }
+  .drop-sub strong { color:var(--accent); cursor:pointer; }
+
+  .file-info {
+    display:none; align-items:center; gap:12px;
+    padding:14px 20px;
+    background:rgba(255,255,255,0.03);
+    border-top:1px solid var(--border);
+    font-size:0.85rem;
+  }
+  .file-info.visible { display:flex; }
+  .file-icon { font-size:1.3rem; }
+  .file-meta { flex:1; overflow:hidden; }
+  .file-name { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file-size { color:var(--muted); font-size:0.75rem; font-family:'DM Mono',monospace; margin-top:2px; }
+  .remove-btn { color:var(--muted); cursor:pointer; padding:4px; font-size:1.1rem; transition:color 0.2s; }
+  .remove-btn:hover { color:var(--error); }
+
+ 
+  .player-wrap {
+    display:none; padding:16px 20px;
+    border-top:1px solid var(--border);
+  }
+  .player-wrap.visible { display:block; }
+  audio { width:100%; height:40px; accent-color:var(--accent); }
+
+  .waveform-wrap {
+    display:none; padding:0 20px 16px;
+  }
+  .waveform-wrap.visible { display:block; }
+  #waveCanvas { width:100%; height:72px; display:block; }
+
+  /* Actions */
+  .card-actions {
+    display:flex; gap:12px; padding:16px 20px;
+    border-top:1px solid var(--border);
+  }
+
+  .btn-predict {
+    flex:1; background:var(--accent); color:#08080f;
+    border:none; padding:16px;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:1rem;
+    cursor:pointer; letter-spacing:-0.01em;
+    clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+    transition:opacity 0.2s, transform 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .btn-predict:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-predict:not(:disabled):hover { transform:translateY(-1px); opacity:0.9; }
+
+  .btn-clear {
+    background:transparent; color:var(--muted);
+    border:1px solid var(--border); padding:16px 20px;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:0.85rem;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .btn-clear:hover { border-color:var(--error); color:var(--error); }
+
+  /* Loading overlay */
+  .loading-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(8,8,15,0.85); backdrop-filter:blur(8px);
+    z-index:200; align-items:center; justify-content:center;
+    flex-direction:column; gap:24px;
+  }
+  .loading-overlay.active { display:flex; }
+
+  .spinner {
+    width:56px; height:56px;
+    border:3px solid var(--border);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .loading-text { font-size:1rem; font-weight:700; color:var(--muted); }
+  .loading-step { font-size:0.78rem; font-family:'DM Mono',monospace; color:var(--accent2); margin-top:-16px; }
+
+
+  .progress-bar-wrap { width:240px; height:2px; background:var(--border); }
+  .progress-bar { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); width:0; transition:width 0.4s ease; }
+
+  .toast {
+    position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
+    background:var(--error); color:#fff;
+    padding:12px 24px; font-size:0.85rem; font-weight:700;
+    z-index:300; opacity:0; pointer-events:none;
+    transition:opacity 0.3s;
+  }
+  .toast.show { opacity:1; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+  @media(max-width:600px) { nav{padding:16px 20px;} main{padding:80px 16px 40px;} .drop-zone{padding:48px 24px;} }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">
+    <div class="logo-dot"></div>
+    HarmoniAI
+  </a>
+  <a href="/" class="back-btn">
+    ← Back to Home
+  </a>
+</nav>
+
+<main>
+  <h1 class="page-title">Drop Your <span>Track.</span></h1>
+
+  <div class="upload-card">
+  
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a,.aac">
+      <div class="upload-icon">🎵</div>
+      <div class="drop-title">Drag & drop your audio file</div>
+      <div class="drop-sub">
+        or <strong id="browseBtn">browse files</strong> &nbsp;·&nbsp; WAV, MP3, FLAC, OGG, AAC
+      </div>
+      <div class="drop-sub" style="margin-top:10px;">Long tracks auto-chunked for fast analysis</div>
+    </div>
+
+    <div class="file-info" id="fileInfo">
+      <span class="file-icon">🎶</span>
+      <div class="file-meta">
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+      <span class="remove-btn" id="removeBtn" title="Remove file">✕</span>
+    </div>
+
+    <div class="waveform-wrap" id="waveformWrap">
+      <canvas id="waveCanvas"></canvas>
+    </div>
+
+    
+    <div class="player-wrap" id="playerWrap">
+      <audio id="audioPlayer" controls preload="auto"></audio>
+    </div>
+
+    <div class="card-actions">
+      <button class="btn-predict" id="predictBtn" disabled>
+        <span>✦</span> Analyse Genre
+      </button>
+      <button class="btn-clear" id="clearBtn">Clear</button>
+    </div>
+  </div>
+</main>
+
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Analysing your track…</div>
+  <div class="loading-step" id="loadingStep">Chunking audio</div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+</div>
+
+<!-- Error toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const dropZone   = document.getElementById('dropZone');
+const fileInput  = document.getElementById('fileInput');
+const browseBtn  = document.getElementById('browseBtn');
+const fileInfo   = document.getElementById('fileInfo');
+const fileName   = document.getElementById('fileName');
+const fileSize   = document.getElementById('fileSize');
+const removeBtn  = document.getElementById('removeBtn');
+const playerWrap = document.getElementById('playerWrap');
+const audioPlayer= document.getElementById('audioPlayer');
+const waveformWrap = document.getElementById('waveformWrap');
+const waveCanvas = document.getElementById('waveCanvas');
+const predictBtn = document.getElementById('predictBtn');
+const clearBtn   = document.getElementById('clearBtn');
+const overlay    = document.getElementById('loadingOverlay');
+const loadingStep= document.getElementById('loadingStep');
+const progressBar= document.getElementById('progressBar');
+const toast      = document.getElementById('toast');
+
+let currentFile = null;
+let objectUrl   = null;
+
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+browseBtn.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('click', e => { if (e.target !== browseBtn) fileInput.click(); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+removeBtn.addEventListener('click', clearFile);
+clearBtn.addEventListener('click', clearFile);
+
+function handleFile(file) {
+  if (!file.type.startsWith('audio/') && !/\.(wav|mp3|flac|ogg|m4a|aac)$/i.test(file.name)) {
+    showToast('Please select a valid audio file.');
+    return;
+  }
+  clearObjectUrl();
+  currentFile = file;
+  objectUrl = URL.createObjectURL(file);
+
+  fileName.textContent = file.name;
+  fileSize.textContent = formatBytes(file.size) + (file.size > 5*1024*1024 ? ' — will be chunked' : '');
+  fileInfo.classList.add('visible');
+  dropZone.classList.add('has-file');
+
+  audioPlayer.src = objectUrl;
+  playerWrap.classList.add('visible');
+
+  drawWaveform(file);
+
+  predictBtn.disabled = false;
+}
+
+function clearFile() {
+  currentFile = null;
+  clearObjectUrl();
+  fileInput.value = '';
+  fileInfo.classList.remove('visible');
+  playerWrap.classList.remove('visible');
+  waveformWrap.classList.remove('visible');
+  dropZone.classList.remove('has-file');
+  predictBtn.disabled = true;
+  audioPlayer.src = '';
+}
+
+function clearObjectUrl() {
+  if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+async function drawWaveform(file) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = await file.arrayBuffer();
+    const audioBuf = await ctx.decodeAudioData(buf);
+    const data = audioBuf.getChannelData(0);
+
+    waveformWrap.classList.add('visible');
+    const canvas = waveCanvas;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = 72 * dpr;
+    const c = canvas.getContext('2d');
+    c.scale(dpr, dpr);
+
+    const w = canvas.offsetWidth, h = 72;
+    const step = Math.ceil(data.length / w);
+    const mid = h / 2;
+
+    const grad = c.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, '#7c6ff7');
+    grad.addColorStop(1, '#c8f564');
+
+    c.clearRect(0, 0, w, h);
+    c.fillStyle = grad;
+
+    for (let x = 0; x < w; x++) {
+      let max = 0;
+      for (let j = 0; j < step; j++) {
+        const val = Math.abs(data[x * step + j] || 0);
+        if (val > max) max = val;
+      }
+      const barH = Math.max(2, max * (h - 4));
+      c.fillRect(x, mid - barH / 2, 1, barH);
+    }
+    ctx.close();
+  } catch(e) { }
+}
+
+
+const loadingSteps = [
+  [0,  'Reading audio file…'],
+  [20, 'Chunking into 4-second segments…'],
+  [45, 'Computing Mel spectrograms…'],
+  [70, 'Running CNN inference…'],
+  [90, 'Aggregating predictions…'],
+];
+
+async function uploadAndPredict() {
+  if (!currentFile) return;
+  overlay.classList.add('active');
+  predictBtn.disabled = true;
+
+  let stepIdx = 0;
+  const stepInterval = setInterval(() => {
+    if (stepIdx < loadingSteps.length) {
+      const [pct, label] = loadingSteps[stepIdx++];
+      progressBar.style.width = pct + '%';
+      loadingStep.textContent = label;
+    }
+  }, 600);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', currentFile);
+
+    const res = await fetch('/predict', { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+
+    clearInterval(stepInterval);
+    progressBar.style.width = '100%';
+    loadingStep.textContent = 'Done!';
+
+    // Store results then navigate
+    sessionStorage.setItem('harmoni_result', JSON.stringify(data));
+    setTimeout(() => { window.location.href = '/result'; }, 400);
+
+  } catch(err) {
+    clearInterval(stepInterval);
+    overlay.classList.remove('active');
+    predictBtn.disabled = false;
+    showToast('Prediction failed. Is the FastAPI server running?');
+    console.error(err);
+  }
+}
+
+predictBtn.addEventListener('click', uploadAndPredict);
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+
+window.addEventListener('beforeunload', clearObjectUrl);
+</script>
+</body>
+</html>

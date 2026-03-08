@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HarmoniAI — Music Genre Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080f;
+    --surface: #0f0f1a;
+    --border: rgba(255,255,255,0.07);
+    --accent: #c8f564;
+    --accent2: #7c6ff7;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --glow: rgba(200,245,100,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  /* Radial glow blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 600px; height: 600px; background: rgba(124,111,247,0.12); top: -200px; left: -200px; }
+  .blob-2 { width: 500px; height: 500px; background: rgba(200,245,100,0.07); bottom: -150px; right: -150px; }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px;
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,15,0.7);
+  }
+  .logo {
+    font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(0.8)} }
+
+  .nav-cta {
+    background: var(--accent); color: #0a0a0a;
+    border: none; padding: 10px 24px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* Hero */
+  .hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 120px 24px 80px;
+    text-align: center;
+  }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    padding: 6px 16px; border-radius: 100px;
+    font-size: 0.75rem; font-family: 'DM Mono', monospace;
+    color: var(--muted); letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-tag span { color: var(--accent); }
+
+  h1 {
+    font-size: clamp(3rem, 9vw, 7.5rem);
+    font-weight: 800; line-height: 0.92;
+    letter-spacing: -0.04em;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent) 0%, #9efb9e 50%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    max-width: 520px; margin: 32px auto 0;
+    font-size: 1.05rem; line-height: 1.7;
+    color: var(--muted); font-weight: 400;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  /* Waveform animation */
+  .wave-vis {
+    display: flex; align-items: center; gap: 4px;
+    margin: 56px auto 48px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  .wave-bar {
+    width: 4px; border-radius: 2px;
+    background: linear-gradient(to top, var(--accent2), var(--accent));
+    animation: wave var(--dur, 1s) var(--delay, 0s) ease-in-out infinite alternate;
+  }
+  @keyframes wave { from { height: 8px; opacity: 0.3; } to { height: var(--h, 48px); opacity: 1; } }
+
+  .cta-group {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .btn-primary {
+    background: var(--accent); color: #08080f;
+    padding: 16px 40px; font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 1rem; letter-spacing: -0.01em;
+    border: none; cursor: pointer; text-decoration: none;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(200,245,100,0.25); }
+  .btn-primary svg { width: 18px; height: 18px; }
+
+  .btn-outline {
+    background: transparent; color: var(--text);
+    padding: 16px 32px; font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 1rem;
+    border: 1px solid var(--border); cursor: pointer; text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-outline:hover { border-color: var(--accent2); background: rgba(124,111,247,0.08); }
+
+  /* Features strip */
+  .features {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .feature-item {
+    background: var(--bg); padding: 48px 40px;
+    transition: background 0.3s;
+  }
+  .feature-item:hover { background: var(--surface); }
+  .feature-icon {
+    font-size: 2rem; margin-bottom: 20px;
+  }
+  .feature-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+  .feature-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.7; font-family: 'DM Mono', monospace; font-weight: 300; }
+
+  /* Genres section */
+  .genres-section {
+    position: relative; z-index: 1;
+    padding: 100px 48px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-title { font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 60px; }
+
+  .genre-grid {
+    display: flex; flex-wrap: wrap; gap: 12px;
+  }
+  .genre-chip {
+    padding: 10px 22px;
+    border: 1px solid var(--border);
+    font-size: 0.9rem; font-weight: 700;
+    color: var(--muted); cursor: default;
+    transition: all 0.25s;
+    letter-spacing: 0.02em;
+  }
+  .genre-chip:hover { color: var(--text); border-color: var(--accent); background: var(--glow); }
+
+  /* Footer */
+  footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 32px 48px;
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--muted); font-size: 0.8rem; font-family: 'DM Mono', monospace;
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 24px; }
+    .features { grid-template-columns: 1fr; }
+    .genres-section { padding: 60px 24px; }
+    footer { flex-direction: column; gap: 12px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<nav>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    HarmoniAI
+  </div>
+  <a href="/upload" class="nav-cta">Classify Now</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">
+    <span>●</span> Deep Learning · Audio Analysis · 10 Genres
+  </div>
+
+  <h1>Hear the<br><em>Genre.</em></h1>
+
+  <p class="hero-sub">
+    Upload any music clip. Our CNN analyzes rhythm, timbre &amp; frequency
+    patterns to identify genre — with confidence scores for every category.
+  </p>
+
+  <div class="wave-vis" aria-hidden="true">
+    <script>
+      document.currentScript.insertAdjacentHTML('afterend', Array.from({length:32}, (_,i) => {
+        const h = Math.round(Math.random()*44 + 12);
+        const dur = (Math.random()*0.8+0.6).toFixed(2);
+        const del = (Math.random()*0.6).toFixed(2);
+        return `<div class="wave-bar" style="--h:${h}px;--dur:${dur}s;--delay:${del}s;height:${h}px"></div>`;
+      }).join(''));
+    </script>
+  </div>
+
+  <div class="cta-group">
+    <a href="/upload" class="btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      Upload Audio
+    </a>
+    <a href="#genres" class="btn-outline">View Genres</a>
+  </div>
+</section>
+
+<div class="features">
+  <div class="feature-item">
+    <div class="feature-icon">⚡</div>
+    <div class="feature-title">Low Latency</div>
+    <div class="feature-desc">Audio chunks are processed in parallel via PyTorch batch inference. Results in seconds, not minutes.</div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon">🔒</div>
+    <div class="feature-title">Zero Retention</div>
+    <div class="feature-desc">Your audio is deleted immediately after prediction. No data stored on our servers — ever.</div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon">📊</div>
+    <div class="feature-title">Full Confidence</div>
+    <div class="feature-desc">See probability scores across all 10 genres, not just the top pick. Understand the model's reasoning.</div>
+  </div>
+</div>
+
+<section class="genres-section" id="genres">
+  <div class="section-label">Supported Genres</div>
+  <div class="section-title">10 Musical<br>Categories</div>
+  <div class="genre-grid">
+    <div class="genre-chip">🎸 Blues</div>
+    <div class="genre-chip">🎻 Classical</div>
+    <div class="genre-chip">🤠 Country</div>
+    <div class="genre-chip">🕺 Disco</div>
+    <div class="genre-chip">🎤 Hip-Hop</div>
+    <div class="genre-chip">🎷 Jazz</div>
+    <div class="genre-chip">🤘 Metal</div>
+    <div class="genre-chip">🎵 Pop</div>
+    <div class="genre-chip">🌴 Reggae</div>
+    <div class="genre-chip">🎸 Rock</div>
+  </div>
+</section>
+
+<footer>
+  <span>HarmoniAI — Powered by Deep Learning</span>
+  <span style="font-style:italic;">CNN · Mel Spectrogram · PyTorch</span>
+</footer>
+
+</body>
+</html>
