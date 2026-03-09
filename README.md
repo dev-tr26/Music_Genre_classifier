@@ -1,22 +1,14 @@
-# Music Genre Classifier
+# harmoni-ai - Music Genre Classifier
 
 A convolutional neural network that classifies music into one of ten genres from raw audio. The model operates on log-scaled Mel spectrograms and is served through a FastAPI backend with a browser-based frontend.
 
 ---
 
-## Table of Contents
 
-- [Dataset](#dataset)
-- [Preprocessing](#preprocessing)
-- [Model Architecture](#model-architecture)
-- [Experiments](#experiments)
-- [Evaluation](#evaluation)
-- [Inference](#inference)
-- [Project Structure](#project-structure)
-- [Running Locally](#running-locally)
-- [Docker](#docker)
 
----
+https://github.com/user-attachments/assets/756a0d0d-a7e3-4f62-84e2-811cbe14999a
+
+
 
 ## Dataset
 
