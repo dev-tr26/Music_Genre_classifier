@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 # Create uploads directory
-RUN mkdir -p uploads
+RUN mkdir -p uploads models 
 
 # Expose FastAPI port
 EXPOSE 8000
