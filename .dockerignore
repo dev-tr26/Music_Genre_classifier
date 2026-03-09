@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.ipynb
+.gitignore
+README.md
+uploads/
+model_1/
+*.pt
+model_2/

@@ -13,6 +13,7 @@ from loader import load_model
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.concurrency import run_in_threadpool
 
 app = FastAPI()
 
@@ -64,10 +65,10 @@ async def predict(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     try:
-        audio_chunks = preprocess_long_audio(file_path)
+        audio_chunks = await run_in_threadpool(preprocess_long_audio,file_path)
         print("Chunks shape:", audio_chunks.shape)
         with torch.no_grad():
-            outputs = model(audio_chunks)
+            outputs = await run_in_threadpool(model,audio_chunks)
             print("Model outputs:")
             print(outputs)
             probabilities = F.softmax(outputs, dim=1)
