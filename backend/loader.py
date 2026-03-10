@@ -3,7 +3,7 @@ from pathlib import Path
 import gdown
 
 MODEL_DIR = Path("models")
-MODEL_PATH = r"..\model_1\music_genre_model_1.pt"
+MODEL_PATH = Path("../model_1/music_genre_model_1.pt")
 
 
 FILE_ID = "10sUE7cKe7pk9Knj4Smymv16CbTxKZgKJ"
