@@ -11,10 +11,9 @@ FILE_ID = "10sUE7cKe7pk9Knj4Smymv16CbTxKZgKJ"
 def download_model():
     DOWNLOAD_MODEL_PATH.parent.mkdir(parents=True,exist_ok=True)
 
-    url = f"https://drive.google.com/file/d/{FILE_ID}/view?usp=drive_link"
 
     print("Downloading model from Google Drive...")
-    gdown.download(url, str(DOWNLOAD_MODEL_PATH), quiet=False)
+    gdown.download(id=FILE_ID,output=str(DOWNLOAD_MODEL_PATH), quiet=False)
 
 
 
