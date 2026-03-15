@@ -9,3 +9,11 @@ uploads/
 model_1/
 *.pt
 model_2/
+models
+*.bin
+*.ckpt
+*.wav
+*.mp3
+uploads
+.git
+__pycache__
